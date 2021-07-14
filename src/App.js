@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 
-import { evaluate } from "mathjs";
+import {evaluate} from "mathjs";
 
 import {ThemeProvider} from 'styled-components';
 
@@ -8,7 +8,8 @@ import {oneTheme, twoTheme, threeTheme} from './theme';
 
 import {GlobalStyles} from "./global";
 
-import {Box, BoxInput, BoxLabel, Button, Container, Desc, Display, Head, Input, Keyboard, Row, Switcher, Theme, Title
+import {
+    Box, BoxInput, BoxLabel, Button, Container, Desc, Display, Head, Input, Keyboard, Row, Switcher, Theme, Title
 } from "./styled-components";
 
 function App() {
@@ -16,6 +17,8 @@ function App() {
     const [themeColor, setThemeColor] = useState(oneTheme);
 
     const [display, setDisplay] = useState("0");
+
+    const [isPoint, setIsPoint] = useState(false);
 
     const [isEqual, setIsEqual] = useState(false);
 
@@ -47,7 +50,9 @@ function App() {
     }, []);
 
     function numb(number) {
-        if (display.length === 1 && display[0] === '0') {
+        if (display === 'error') {
+            setDisplay(number)
+        } else if (display.length === 1 && display[0] === '0') {
             setDisplay(number)
         } else if (isEqual) {
             setIsEqual(false)
@@ -57,48 +62,67 @@ function App() {
         }
     }
 
+    function setPoint(sign) {
+
+        if (isEqual && display.toString().includes(sign)) {
+            setIsPoint(true)
+            setIsEqual(false);
+        } else if (!isPoint) {
+            setDisplay((prev) => prev.toString().concat(sign))
+            setIsPoint(true)
+        } else {
+            setIsPoint(false)
+        }
+    }
+
     function action(sign) {
         if (display[display.length - 1] === '+'
             || display[display.length - 1] === '-'
             || display[display.length - 1] === '*'
-            || display[display.length - 1] === '.'
             || display[display.length - 1] === '/') {
-                setDisplay((prev) => prev.toString().slice(0, display.length - 1).concat(sign))
+            setDisplay((prev) => prev.toString().slice(0, display.length - 1).concat(sign))
         } else if (isEqual) {
             setIsEqual(false);
             setDisplay((prev) => prev.toString().concat(sign))
         } else {
-            setDisplay((prev) => prev.toString().concat(sign))
+            if (display.length === 1 && display[0] === "0" && sign === "-" || display === 'error') {
+                setDisplay(sign)
+            } else {
+                setDisplay((prev) => prev.toString().concat(sign))
+            }
         }
+        setIsPoint(false)
     }
 
     function reset() {
         setDisplay("0");
         setIsEqual(false)
+        setIsPoint(false)
     }
 
     function del() {
-        if (display.length === 1) {
+        if (display.length === 1 || display === 'error') {
             setDisplay('0')
-        } else if (isEqual) {
-            setIsEqual(false)
-            setDisplay("0")
+            setIsPoint(false)
+        } else if (display[display.length - 1] === ".") {
+            setIsPoint(false)
+            setDisplay(String(display).slice(0, -1))
+        } else if (isEqual && display.toString().includes('.')) {
+            setIsPoint(true)
+            setDisplay(String(display).slice(0, -1))
         } else {
             setDisplay(String(display).slice(0, -1))
         }
     }
 
     function equal() {
-        if (
-            display === "0-" || display === "0+" || display === "0*" || display === "0/" ||
-            display[display.length - 1] === "+" || display[display.length - 1] === "-" ||
-            display[display.length - 1] === "*" || display[display.length - 1] === "/"
-        ) {
-            return;
+        try {
+            setDisplay(evaluate(display.toString()));
+            setIsEqual(true);
         }
-
-        setDisplay(evaluate(display.toString()));
-        setIsEqual(true);
+        catch (equ) {
+           setDisplay('error')
+        }
     }
 
     const triggerToggle = (e) => {
@@ -277,7 +301,7 @@ function App() {
                         >-</Button>
 
                         <Button
-                            onClick={() => action('.')}
+                            onClick={() => setPoint('.')}
                             style={{
                                 backgroundColor: themeColor.buttonPrimary,
                                 color: themeColor.buttonPrimaryColor,
