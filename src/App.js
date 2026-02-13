@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 
 import {evaluate} from "mathjs";
 
@@ -42,12 +42,10 @@ function App() {
 
     };
 
-    React.useEffect(() => {
+    useEffect(() => {
         window.addEventListener('keydown', handleKeyDown);
-        return () => {
-            window.removeEventListener('keydown', handleKeyDown);
-        };
-    }, []);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [handleKeyDown]);
 
     function numb(number) {
         if (display === 'error') {
